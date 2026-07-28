@@ -31,6 +31,9 @@ GitHub 用于保存源码；GitHub Pages 只能托管静态网页，不能安全
 不能运行本项目的 OCR 和数据接口。请将 GitHub 仓库连接到支持服务器接口的平台（推荐
 Cloudflare Workers/Pages 或 Vercel），并在该平台设置 `OPENROUTER_API_KEY`。
 
+Cloudflare 部署使用 D1 保存账本。若要永久保留每张原始销售单图片，还需在 Cloudflare 控制台
+启用 R2，再将名为 `huixuan-sales-ledger-uploads` 的存储桶绑定为 `UPLOADS`。
+
 This starter does not use `wrangler.jsonc`.
 
 ## Included Shape
