@@ -18,7 +18,10 @@ const schema = {
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
+  const expectedAccessCode = process.env.ACCESS_CODE;
   if (!apiKey) return NextResponse.json({ error: "识别服务尚未配置。请在网站的安全设置中添加 OPENAI_API_KEY。" }, { status: 503 });
+  if (!expectedAccessCode) return NextResponse.json({ error: "识别服务尚未设置使用口令。请添加 ACCESS_CODE。" }, { status: 503 });
+  if (request.headers.get("x-access-code") !== expectedAccessCode) return NextResponse.json({ error: "使用口令不正确。" }, { status: 401 });
   const form = await request.formData();
   const image = form.get("image");
   if (!(image instanceof File) || !image.type.startsWith("image/")) return NextResponse.json({ error: "请上传图片文件。" }, { status: 400 });

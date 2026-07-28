@@ -59,6 +59,7 @@ export default function Home() {
   const [sale, setSale] = useState<Sale>(EMPTY_SALE);
   const [hasMaster, setHasMaster] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [accessCode, setAccessCode] = useState("");
   const [status, setStatus] = useState("先上传一次销售汇总表，再上传销售单图片。");
   const [busy, setBusy] = useState(false);
 
@@ -89,7 +90,7 @@ export default function Home() {
     try {
       const body = new FormData();
       body.append("image", image);
-      const response = await fetch("/api/recognize", { method: "POST", body });
+      const response = await fetch("/api/recognize", { method: "POST", body, headers: { "x-access-code": accessCode } });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "图片识别失败");
       setSale(payload.sale);
@@ -180,12 +181,13 @@ export default function Home() {
       <section className="card">
         <p className="step">第 2 步</p>
         <h2>上传销售单图片</h2>
+        <label className="access-code">使用口令<input type="password" value={accessCode} onChange={(event) => setAccessCode(event.target.value)} placeholder="输入你设置的使用口令" /></label>
         <form onSubmit={recognize} className="upload-row">
           <label className="dropzone">
             <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
             <span>{image ? image.name : "选择单据图片（PNG、JPG 或 WebP）"}</span>
           </label>
-          <button disabled={busy || !image} type="submit">{busy ? "处理中…" : "识别图片"}</button>
+          <button disabled={busy || !image || !accessCode} type="submit">{busy ? "处理中…" : "识别图片"}</button>
         </form>
       </section>
 
