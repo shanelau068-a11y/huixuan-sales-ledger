@@ -47,7 +47,6 @@ const roundMoney = (value: number) => Math.round(value * 100) / 100;
 
 function validateDocument(payload: Partial<SaleDocument>) {
   const errors: string[] = [];
-  if (!payload.documentNo?.trim()) errors.push("缺少单据编号");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.saleDate ?? "")) errors.push("销售日期格式不正确");
   if (!payload.customer?.trim()) errors.push("缺少客户名称");
   if (!payload.lines?.length) errors.push("至少需要一条货品明细");
@@ -168,13 +167,16 @@ export async function POST(request: Request) {
   const { errors, lineTotal } = validateDocument(payload);
   if (errors.length) return Response.json({ error: "复核未通过", errors }, { status: 422 });
 
-  const duplicate = await db
-    .prepare("SELECT id FROM sale_documents WHERE document_no = ?1 LIMIT 1")
-    .bind(payload.documentNo!.trim())
-    .first<{ id: string }>();
-  if (duplicate) return jsonError("该单据编号已经入账，请勿重复提交", 409);
-
   const id = crypto.randomUUID();
+  const suppliedDocumentNo = payload.documentNo?.trim() || "";
+  const documentNo = suppliedDocumentNo || `WEB-${payload.saleDate!.replaceAll("-", "")}-${id.slice(0, 8).toUpperCase()}`;
+  if (suppliedDocumentNo) {
+    const duplicate = await db
+      .prepare("SELECT id FROM sale_documents WHERE document_no = ?1 LIMIT 1")
+      .bind(documentNo)
+      .first<{ id: string }>();
+    if (duplicate) return jsonError("该单据编号已经入账，请勿重复提交", 409);
+  }
   const now = new Date().toISOString();
   const documentStatement = db
     .prepare(
@@ -186,7 +188,7 @@ export async function POST(request: Request) {
     )
     .bind(
       id,
-      payload.documentNo!.trim(),
+      documentNo,
       payload.saleDate,
       payload.customer!.trim(),
       payload.salesperson?.trim() || "刘惠璇",
@@ -229,12 +231,12 @@ export async function POST(request: Request) {
     .bind(
       id,
       payload.salesperson?.trim() || "刘惠璇",
-      JSON.stringify({ documentNo: payload.documentNo, lineTotal, lineCount: payload.lines!.length }),
+      JSON.stringify({ documentNo, lineTotal, lineCount: payload.lines!.length }),
       now,
     );
 
   await db.batch([documentStatement, ...lineStatements, auditStatement]);
-  return Response.json({ ok: true, id, invoiceTotal: lineTotal }, { status: 201 });
+  return Response.json({ ok: true, id, documentNo, invoiceTotal: lineTotal }, { status: 201 });
 }
 
 function nextMonth(month: string) {

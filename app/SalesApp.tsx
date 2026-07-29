@@ -6,7 +6,7 @@ import { buildMonthlyWorkbook } from "./xlsx-export";
 
 type View = "dashboard" | "upload" | "customers";
 
-const optionalFieldWarning = /(联系电话|联系(?:电话|方式)|电话|送货地址|地址|业务员|销售员|商标|品牌|坑距|备注)/;
+const optionalFieldWarning = /(联系电话|联系(?:电话|方式)|电话|送货地址|地址|业务员|销售员|商标|品牌|坑距|备注|单据编号|单号|订单号)/;
 
 const money = new Intl.NumberFormat("zh-CN", {
   style: "currency",
@@ -288,7 +288,6 @@ export function SalesApp({ initialDocuments }: { initialDocuments: SaleDocument[
   const draftChecks = useMemo(() => {
     if (!draft) return [];
     const checks: string[] = [];
-    if (!draft.documentNo.trim()) checks.push("缺少单据编号");
     if (!draft.customer.trim()) checks.push("缺少客户名称");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.saleDate)) checks.push("日期格式不正确");
     draft.lines.forEach((line, index) => {
@@ -307,7 +306,7 @@ export function SalesApp({ initialDocuments }: { initialDocuments: SaleDocument[
       setNotice("仍有需要处理的项目，请先检查黄色提示。");
       return;
     }
-    if (documents.some((document) => document.documentNo === draft.documentNo)) {
+    if (draft.documentNo.trim() && documents.some((document) => document.documentNo === draft.documentNo)) {
       setNotice("该单据编号已经存在，系统已拦截重复入账。");
       return;
     }
@@ -333,7 +332,7 @@ export function SalesApp({ initialDocuments }: { initialDocuments: SaleDocument[
           throw new Error(result.errors?.join("；") || result.error || "保存失败");
         }
       } else {
-        setDocuments((current) => [...current, { ...confirmed, id: result.id }]);
+        setDocuments((current) => [...current, { ...confirmed, id: result.id, documentNo: result.documentNo || confirmed.documentNo }]);
         setNotice("已确认入账，金额校验通过。");
       }
       setMonth(confirmed.saleDate.slice(0, 7));
@@ -529,7 +528,7 @@ export function SalesApp({ initialDocuments }: { initialDocuments: SaleDocument[
                   <div className="form-grid">
                     <label><span>销售日期 *</span><input value={draft.saleDate} type="date" onChange={(event) => updateDraftField("saleDate", event.target.value)} /></label>
                     <label><span>客户名称 *</span><input value={draft.customer} onChange={(event) => updateDraftField("customer", event.target.value)} /></label>
-                    <label><span>单据编号 *</span><input value={draft.documentNo} onChange={(event) => updateDraftField("documentNo", event.target.value)} /></label>
+                    <label><span>单据编号（可不填）</span><input value={draft.documentNo} onChange={(event) => updateDraftField("documentNo", event.target.value)} /></label>
                     <label><span>业务员（可不填）</span><input value={draft.salesperson} onChange={(event) => updateDraftField("salesperson", event.target.value)} /></label>
                   </div>
                   <div className="line-title"><div><h3>货品明细</h3><small>金额会根据数量和单价自动计算</small></div><button className="ghost small" onClick={addLine}>＋ 添加一行</button></div>

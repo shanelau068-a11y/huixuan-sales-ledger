@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       provider: { require_parameters: true },
       response_format: { type: "json_schema", json_schema: { name: "sales_order", strict: true, schema: ocrSchema } },
       messages: [{ role: "user", content: [
-        { type: "text", text: "你是销售财务录单员。逐字识别这张中文销售单并输出结构化数据。只填写能看清的内容；看不清就留空，禁止猜测。客户、单据编号、日期、货品名称、数量、单价、金额必须对应原始位置。联系电话、送货地址、业务员、商标、坑距、备注均为可选字段：识别不到时直接留空，不要写入 fieldWarnings，也不能影响入账。固定业务员为“刘惠璇”，salesperson 默认输出“刘惠璇”，但允许为空。逐行核对数量×单价=金额、明细和=合计；不一致时保留原值并写警告。金额为数字，日期为 YYYY-MM-DD。不要把二维码、银行账号或提示语当作销售明细。" },
+        { type: "text", text: "你是销售财务录单员。逐字识别这张中文销售单并输出结构化数据。只填写能看清的内容；看不清就留空，禁止猜测。客户、日期、货品名称、数量、单价、金额必须对应原始位置。单据编号、联系电话、送货地址、业务员、商标、坑距、备注均为可选字段：识别不到时直接留空，不要写入 fieldWarnings，也不能影响入账。固定业务员为“刘惠璇”，salesperson 默认输出“刘惠璇”，但允许为空。逐行核对数量×单价=金额、明细和=合计；不一致时保留原值并写警告。金额为数字，日期为 YYYY-MM-DD。不要把二维码、银行账号或提示语当作销售明细。" },
         { type: "image_url", image_url: { url: `data:${file.type};base64,${uint8ToBase64(bytes)}` } },
       ] }],
     }),
