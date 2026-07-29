@@ -6,6 +6,8 @@ import { buildMonthlyWorkbook } from "./xlsx-export";
 
 type View = "dashboard" | "upload" | "customers";
 
+const optionalFieldWarning = /(联系电话|联系(?:电话|方式)|电话|送货地址|地址|业务员|销售员|商标|品牌|坑距|备注)/;
+
 const money = new Intl.NumberFormat("zh-CN", {
   style: "currency",
   currency: "CNY",
@@ -295,7 +297,9 @@ export function SalesApp({ initialDocuments }: { initialDocuments: SaleDocument[
         checks.push(`第 ${index + 1} 行金额不一致`);
       }
     });
-    return [...draft.fieldWarnings, ...checks];
+    // These fields are useful when present, but must never block a sales entry.
+    const blockingWarnings = draft.fieldWarnings.filter((warning) => !optionalFieldWarning.test(warning));
+    return [...blockingWarnings, ...checks];
   }, [draft]);
 
   async function confirmDraft() {
@@ -526,12 +530,12 @@ export function SalesApp({ initialDocuments }: { initialDocuments: SaleDocument[
                     <label><span>销售日期 *</span><input value={draft.saleDate} type="date" onChange={(event) => updateDraftField("saleDate", event.target.value)} /></label>
                     <label><span>客户名称 *</span><input value={draft.customer} onChange={(event) => updateDraftField("customer", event.target.value)} /></label>
                     <label><span>单据编号 *</span><input value={draft.documentNo} onChange={(event) => updateDraftField("documentNo", event.target.value)} /></label>
-                    <label><span>业务员</span><input value={draft.salesperson} onChange={(event) => updateDraftField("salesperson", event.target.value)} /></label>
+                    <label><span>业务员（可不填）</span><input value={draft.salesperson} onChange={(event) => updateDraftField("salesperson", event.target.value)} /></label>
                   </div>
                   <div className="line-title"><div><h3>货品明细</h3><small>金额会根据数量和单价自动计算</small></div><button className="ghost small" onClick={addLine}>＋ 添加一行</button></div>
                   <div className="edit-table-wrap">
                     <table className="edit-table">
-                      <thead><tr><th>#</th><th>货品名称 *</th><th>坑距</th><th>数量</th><th>单价</th><th>金额</th><th>备注</th><th /></tr></thead>
+                      <thead><tr><th>#</th><th>货品名称 *</th><th>坑距（可不填）</th><th>数量</th><th>单价</th><th>金额</th><th>备注（可不填）</th><th /></tr></thead>
                       <tbody>
                         {draft.lines.map((line, index) => (
                           <tr key={line.lineNo}>
