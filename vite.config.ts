@@ -6,6 +6,8 @@ import { sites } from "./build/sites-vite-plugin";
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const localBindingConfig = {
+  // Match the workerd binary pinned by this project; cloud hosting metadata is separate.
+  compatibility_date: "2026-05-22",
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
 };
@@ -28,6 +30,7 @@ export default defineConfig(async () => {
       vinext(),
       sites(),
       cloudflare({
+        inspectorPort: false,
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: localBindingConfig,
       }),
